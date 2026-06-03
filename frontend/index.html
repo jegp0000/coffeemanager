@@ -1,160 +1,106 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>Coffee Manager ☕</title>
+<title>Productos Café</title>
 
 <style>
-body {
-  margin: 0;
-  font-family: Arial;
-  background: linear-gradient(135deg,#2b1b14,#4b2e24);
-  color: #f5e6d3;
-}
-
-header {
-  text-align: center;
-  padding: 20px;
-  background: #3b241c;
-}
-
-header h1 {
-  color: #f5c16c;
-}
-
-.container {
-  max-width: 1000px;
-  margin: auto;
-  padding: 20px;
-}
-
-.form {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-  flex-wrap: wrap;
-  margin-bottom: 20px;
-}
-
-input {
-  padding: 10px;
-  border-radius: 6px;
-  border: none;
-}
-
-button {
-  padding: 10px;
-  background: #a97142;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-button:hover {
-  background: #c08a55;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: #2a1a14;
-}
-
-th, td {
-  padding: 10px;
-  text-align: center;
-  border-bottom: 1px solid #444;
-}
-
-th {
-  background: #5a3e2b;
-}
+body{font-family:Arial;background:#f4f4f4;padding:20px}
+.card{background:white;padding:10px;margin:10px;border-radius:8px}
+input,button{padding:8px;margin:5px}
 </style>
 </head>
 
 <body>
 
-<header>
-<h1>☕ Coffee Manager</h1>
-<p>Inventario de cafetería</p>
-</header>
+<h2>Gestión de Productos</h2>
 
-<div class="container">
+<h3>Agregar producto</h3>
 
-<div class="form">
-  <input id="nombre" placeholder="Nombre">
-  <input id="categoria" placeholder="Categoría">
-  <input id="stock" type="number" placeholder="Stock">
-  <input id="precio" type="number" placeholder="Precio">
-  <button onclick="crear()">Agregar</button>
-</div>
+<input id="name" placeholder="nombre">
+<input id="price" placeholder="precio">
+<input id="stock" placeholder="stock">
+<button onclick="add()">Agregar</button>
 
-<table>
-<thead>
-<tr>
-<th>Nombre</th>
-<th>Categoría</th>
-<th>Stock</th>
-<th>Precio</th>
-<th>Acción</th>
-</tr>
-</thead>
-<tbody id="tabla"></tbody>
-</table>
+<hr>
 
-</div>
+<h3>Lista</h3>
+<div id="list"></div>
 
 <script>
 
-const API = "http://localhost:3000/productos";
+const API = "https://coffee-manager-backend-6jvc.onrender.com";
 
-// CARGAR
-async function cargar() {
-  const res = await fetch(API);
-  const data = await res.json();
+let products = [];
 
-  const tabla = document.getElementById("tabla");
-  tabla.innerHTML = "";
+async function load(){
+  products = await fetch(API+"/products").then(r=>r.json());
+  render();
+}
 
-  data.forEach(p => {
-    tabla.innerHTML += `
-      <tr>
-        <td>${p.nombre}</td>
-        <td>${p.categoria}</td>
-        <td>${p.stock}</td>
-        <td>${p.precio}</td>
-        <td><button onclick="eliminar('${p._id}')">Eliminar</button></td>
-      </tr>
-    `;
+function render(){
+  document.getElementById("list").innerHTML =
+    products.map(p=>`
+      <div class="card">
+        <b>${p.nombre}</b><br>
+        Stock: ${p.stock} | Precio: ${p.precio}
+
+        <br>
+
+        <button onclick="del('${p._id}')">Eliminar</button>
+
+        <button onclick="editPrompt('${p._id}')">Editar</button>
+      </div>
+    `).join("");
+}
+
+// ➕ agregar
+async function add(){
+  await fetch(API+"/products",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      nombre:name.value,
+      precio:Number(price.value),
+      stock:Number(stock.value)
+    })
   });
+
+  name.value="";
+  price.value="";
+  stock.value="";
+
+  load();
 }
 
-// CREAR
-async function crear() {
-  const producto = {
-    nombre: nombre.value,
-    categoria: categoria.value,
-    stock: stock.value,
-    precio: precio.value
-  };
+// ❌ eliminar
+async function del(id){
+  await fetch(API+"/products/"+id,{method:"DELETE"});
+  load();
+}
 
-  await fetch(API, {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify(producto)
+// ✏️ editar
+async function editPrompt(id){
+  const p = products.find(x=>x._id===id);
+
+  const nombre = prompt("Nombre", p.nombre);
+  const precio = prompt("Precio", p.precio);
+  const stock = prompt("Stock", p.stock);
+
+  await fetch(API+"/products/"+id,{
+    method:"PUT",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      nombre,
+      precio:Number(precio),
+      stock:Number(stock)
+    })
   });
 
-  cargar();
+  load();
 }
 
-// ELIMINAR
-async function eliminar(id) {
-  await fetch(`${API}/${id}`, { method: "DELETE" });
-  cargar();
-}
-
-cargar();
+load();
 
 </script>
 
