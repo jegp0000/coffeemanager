@@ -1,13 +1,14 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+require("dotenv").config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 // 🔌 MONGO
-mongoose.connect("mongodb://coffeemanager:1995@ac-izfpkm1-shard-00-00.di8eg8z.mongodb.net:27017,ac-izfpkm1-shard-00-01.di8eg8z.mongodb.net:27017,ac-izfpkm1-shard-00-02.di8eg8z.mongodb.net:27017/coffee?ssl=true&replicaSet=atlas-12jujh-shard-0&authSource=admin&appName=Cluster0")
+mongoose.connect(process.env.MONGO_URI)
 .then(()=>console.log("Mongo OK"))
 .catch(err=>console.log(err));
 
