@@ -3,91 +3,77 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 
 const app = express();
-
-app.use(express.json());
 app.use(cors());
+app.use(express.json());
 
-// ===============================
-// CONEXIÓN MONGO
-// ===============================
-const uri = "mongodb://coffeemanager:1995@ac-izfpkm1-shard-00-00.di8eg8z.mongodb.net:27017,ac-izfpkm1-shard-00-01.di8eg8z.mongodb.net:27017,ac-izfpkm1-shard-00-02.di8eg8z.mongodb.net:27017/tuDB?ssl=true&replicaSet=atlas-12jujh-shard-0&authSource=admin&retryWrites=true&w=majority&appName=Cluster0";
+// 🔌 MONGO
+mongoose.connect("mongodb://coffeemanager:1995@ac-izfpkm1-shard-00-00.di8eg8z.mongodb.net:27017,ac-izfpkm1-shard-00-01.di8eg8z.mongodb.net:27017,ac-izfpkm1-shard-00-02.di8eg8z.mongodb.net:27017/coffee?ssl=true&replicaSet=atlas-12jujh-shard-0&authSource=admin&appName=Cluster0")
+.then(()=>console.log("Mongo OK"))
+.catch(err=>console.log(err));
 
-// ===============================
-// MODELO
-// ===============================
-const Producto = mongoose.model("Producto", {
+// 📦 PRODUCTO
+const Product = mongoose.model("Product", {
   nombre: String,
-  categoria: String,
   stock: Number,
   precio: Number
 });
 
-// ===============================
-// SEED (10 PRODUCTOS)
-// ===============================
-async function seedProductos() {
-  const count = await Producto.countDocuments();
+// 🟢 SEED (20 PRODUCTOS)
+async function seed(){
+  const count = await Product.countDocuments();
 
-  if (count === 0) {
-    await Producto.insertMany([
-      { nombre: "Café Americano", categoria: "café", stock: 20, precio: 3000 },
-      { nombre: "Cappuccino", categoria: "café", stock: 15, precio: 4500 },
-      { nombre: "Latte", categoria: "café", stock: 18, precio: 5000 },
-      { nombre: "Espresso", categoria: "café", stock: 25, precio: 2500 },
-      { nombre: "Mocha", categoria: "café", stock: 10, precio: 5500 },
-      { nombre: "Croissant", categoria: "panadería", stock: 12, precio: 4000 },
-      { nombre: "Brownie", categoria: "postre", stock: 8, precio: 3500 },
-      { nombre: "Té Negro", categoria: "bebida", stock: 14, precio: 2500 },
-      { nombre: "Jugo Natural", categoria: "bebida", stock: 10, precio: 3500 },
-      { nombre: "Galletas", categoria: "snack", stock: 30, precio: 1500 }
+  if(count === 0){
+    await Product.insertMany([
+      { nombre:"Espresso", stock:20, precio:2500 },
+      { nombre:"Americano", stock:20, precio:3000 },
+      { nombre:"Latte", stock:20, precio:5000 },
+      { nombre:"Cappuccino", stock:20, precio:5500 },
+      { nombre:"Mocha", stock:20, precio:6000 },
+      { nombre:"Macchiato", stock:20, precio:4500 },
+      { nombre:"Flat White", stock:20, precio:5200 },
+      { nombre:"Cold Brew", stock:20, precio:6500 },
+      { nombre:"Iced Latte", stock:20, precio:5800 },
+      { nombre:"Affogato", stock:20, precio:7000 },
+      { nombre:"Café con Leche", stock:20, precio:3500 },
+      { nombre:"Café Negro", stock:20, precio:2500 },
+      { nombre:"Caramel Latte", stock:20, precio:6200 },
+      { nombre:"Vanilla Latte", stock:20, precio:6200 },
+      { nombre:"Hazelnut Coffee", stock:20, precio:6500 },
+      { nombre:"Irish Coffee", stock:20, precio:8000 },
+      { nombre:"Cortado", stock:20, precio:3000 },
+      { nombre:"Doppio", stock:20, precio:4000 },
+      { nombre:"Ristretto", stock:20, precio:2800 },
+      { nombre:"Turkish Coffee", stock:20, precio:7500 }
     ]);
 
-    console.log("☕ Productos iniciales cargados");
+    console.log("Seed listo");
   }
 }
 
-// ===============================
-// RUTAS
-// ===============================
-app.get("/", (req, res) => {
-  res.send("API Coffee Manager funcionando ☕");
+seed();
+
+// 📦 GET
+app.get("/products", async (req,res)=>{
+  res.json(await Product.find());
 });
 
-app.get("/productos", async (req, res) => {
-  const productos = await Producto.find();
-  res.json(productos);
+// ➕ CREATE
+app.post("/products", async (req,res)=>{
+  res.json(await Product.create(req.body));
 });
 
-app.post("/productos", async (req, res) => {
-  const producto = new Producto(req.body);
-  await producto.save();
-  res.json(producto);
+// ✏️ UPDATE
+app.put("/products/:id", async (req,res)=>{
+  res.json(await Product.findByIdAndUpdate(req.params.id, req.body, { new:true }));
 });
 
-app.put("/productos/:id", async (req, res) => {
-  const producto = await Producto.findByIdAndUpdate(
-    req.params.id,
-    req.body,
-    { new: true }
-  );
-  res.json(producto);
+// ❌ DELETE
+app.delete("/products/:id", async (req,res)=>{
+  res.json(await Product.findByIdAndDelete(req.params.id));
 });
 
-app.delete("/productos/:id", async (req, res) => {
-  await Producto.findByIdAndDelete(req.params.id);
-  res.json({ mensaje: "Eliminado" });
-});
+const PORT = process.env.PORT || 3000;
 
-// ===============================
-// CONEXIÓN + SERVIDOR
-// ===============================
-mongoose.connect(uri)
-  .then(async () => {
-    console.log("✅ Mongo conectado");
-    await seedProductos();
-  })
-  .catch(err => console.log(err));
-
-app.listen(3000, () => {
-  console.log("🚀 Servidor en http://localhost:3000");
+app.listen(PORT, () => {
+  console.log(`RUN ${PORT}`);
 });
